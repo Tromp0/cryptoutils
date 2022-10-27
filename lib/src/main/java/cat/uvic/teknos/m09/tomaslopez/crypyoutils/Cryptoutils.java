@@ -1,45 +1,45 @@
 package cat.uvic.teknos.m09.tomaslopez.crypyoutils;
 
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Properties;
 
 public class Cryptoutils {
 
+    private static byte[] hashSalt;
+
     // HASHING METHODS //
-    public static String getHash(byte[] message) throws IOException, NoSuchAlgorithmException {
+    public static String getHash(String message) throws IOException, NoSuchAlgorithmException {
+        var messagebytes = message.getBytes();
         var encryptedmsg = "";
-        var propieties = new Properties();
-        propieties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.propieties"));
-        var hashAlgorithm = propieties.getProperty("hash.algorithm");
-        if(Boolean.parseBoolean((String) propieties.get("hash.salt"))){
+        var properties = new Properties();
+        properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.propieties"));
+        var hashAlgorithm = properties.getProperty("hash.algorithm");
+        if(Boolean.parseBoolean((String) properties.get("hash.salt"))){
             var salt = getSalt();
-            encryptedmsg = getDigest(message, salt, hashAlgorithm);
+            encryptedmsg = getDigest(messagebytes, salt, hashAlgorithm);
         }
         else{
-            encryptedmsg = getDigestNoSalt(message, hashAlgorithm);
+            encryptedmsg = getDigestNoSalt(messagebytes, hashAlgorithm);
         }
         return encryptedmsg;
     }
-
-    public static String getDigestNoSalt(byte[] data, String algorithm) throws NoSuchAlgorithmException {
-        var dataBytes = data;
+    public static String getDigestNoSalt(byte[] dataBytes, String algorithm) throws NoSuchAlgorithmException {
 
         var messageDigest = MessageDigest.getInstance(algorithm);
-
         var digest = messageDigest.digest(dataBytes);
-
         var base64Encoder = Base64.getEncoder();
 
         return base64Encoder.encodeToString(digest);
     }
 
-    public static String getDigest(byte[] data, byte[] salt, String algorithm) throws NoSuchAlgorithmException {
-        var dataBytes = data;
-
+    public static String getDigest(byte[] dataBytes, byte[] salt, String algorithm) throws NoSuchAlgorithmException {
         var messageDigest = MessageDigest.getInstance(algorithm);
 
         messageDigest.update(salt);
@@ -59,9 +59,32 @@ public class Cryptoutils {
         return salt;
     }
     //  ENCRYPT AND DECRYPT METHODS //
-    public byte[] singDocument(){
-
-        return new byte[0];
+    public static byte[] encrypt(String text, String pw) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        var textBytes = text.getBytes();
+        var properties = new Properties();
+        properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.propieties"));
+        hashSalt = getSalt();
+        var iv = new IvParameterSpec(hashSalt);
+        var pbeKeySpec = new PBEKeySpec(pw.toCharArray(), hashSalt, Integer.parseInt(properties.getProperty("hash.iterations")), 256);
+        var pbeKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(pbeKeySpec);
+        var secretKey =  new SecretKeySpec(pbeKey.getEncoded(), "AES");
+        var cipher = Cipher.getInstance(properties.getProperty("hash.symmetricAlgorithm"));
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
+        return cipher.doFinal(textBytes);
     }
+    public static byte[] decrypt(byte[] cipherText, String pw) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        var properties = new Properties();
+        properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.properties"));
+        var base64Encoder = Base64.getEncoder();
+        var iv = new IvParameterSpec(hashSalt);
+        var pbeKeySpec = new PBEKeySpec(pw.toCharArray(),hashSalt, Integer.parseInt(properties.getProperty("hash.iterations")), 256);
+        var pbeKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(pbeKeySpec);
+        var secretKey =  new SecretKeySpec(pbeKey.getEncoded(), "AES");
+        var cipher = Cipher.getInstance(properties.getProperty("hash.symmetricAlgorithm"));
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
+        return cipher.doFinal(cipherText);
+
+    }
+
 
 }
