@@ -39,13 +39,13 @@ public class CryptoutilsTest extends TestCase {
     @Test
     public void encrypt() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, IOException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
         String myvar = "EXAMPLE TEXT";
-        assertNotNull(Cryptoutils.encrypt(myvar,"0000"));
+        assertNotNull(Cryptoutils.encrypt(myvar,"1999"));
     }
     @Test
     public void decrypt() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, IOException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
         String myvar = "EXAMPLE TEXT";
-        byte [] encrypted = Cryptoutils.encrypt(myvar,"0000");
-        assertNotNull(Cryptoutils.decrypt(encrypted,"0000"));
+        byte [] encrypted = Cryptoutils.encrypt(myvar,"1999");
+        assertNotNull(Cryptoutils.decrypt(encrypted,"1999"));
 
     }
 }

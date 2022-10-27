@@ -80,8 +80,8 @@ public class Cryptoutils {
         properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.properties"));
         var signer = Signature.getInstance(properties.getProperty("keystore.algorithm"));
         var certFactory = getInstance("X.509");
-        InputStream in = new ByteArrayInputStream(certificate);
-        var cert = (X509Certificate)certFactory.generateCertificate(in); cert = null;
+        InputStream inptStream = new ByteArrayInputStream(certificate);
+        var cert = (X509Certificate)certFactory.generateCertificate(inptStream); cert = null;
         cert.checkValidity();
         var publicKey = cert.getPublicKey();
         signer.initVerify(publicKey);
@@ -96,19 +96,18 @@ public class Cryptoutils {
         var properties = new Properties();
         properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.properties"));
         hashSalt = getSalt();
-        var iv = new IvParameterSpec(hashSalt);
+        var ivP = new IvParameterSpec(hashSalt);
         var pbeKeySpec = new PBEKeySpec(pw.toCharArray(), hashSalt, Integer.parseInt(properties.getProperty("hash.iterations")), 256);
         var pbeKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(pbeKeySpec);
         var secretKey =  new SecretKeySpec(pbeKey.getEncoded(), "AES");
         var cipher = Cipher.getInstance(properties.getProperty("hash.symmetricAlgorithm"));
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivP);
 
         return cipher.doFinal(textBytes);
     }
     public static byte[] decrypt(byte[] cipherText, String pw) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         var properties = new Properties();
         properties.load(Cryptoutils.class.getResourceAsStream("/cryptoutils.properties"));
-        var base64Encoder = Base64.getEncoder();
         var iv = new IvParameterSpec(hashSalt);
         var pbeKeySpec = new PBEKeySpec(pw.toCharArray(),hashSalt, Integer.parseInt(properties.getProperty("hash.iterations")), 256);
         var pbeKey = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(pbeKeySpec);
@@ -117,7 +116,6 @@ public class Cryptoutils {
         cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
 
         return cipher.doFinal(cipherText);
-
     }
 
 }
