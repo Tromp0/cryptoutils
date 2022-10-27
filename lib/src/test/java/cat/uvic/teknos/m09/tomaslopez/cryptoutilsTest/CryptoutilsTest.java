@@ -9,9 +9,8 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static org.junit.Assert.assertNotNull;
@@ -36,10 +35,8 @@ public class CryptoutilsTest {
 
     }
     @Test
-    void sign() throws IOException {
-        byte[] message = new byte[0];
-        message = Files.readAllBytes(Paths.get("src/main/resources/message.txt"));
-
+    void sign() throws IOException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+       var message = Files.readAllBytes(Paths.get("src/main/resources/message.txt"));
         assertNotNull(Cryptoutils.sign(message));
     }
 }
